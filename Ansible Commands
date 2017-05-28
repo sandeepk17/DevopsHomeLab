@@ -1,0 +1,329 @@
+[Ansible Modules] 
+COMMAND MODULES
+#COMMAND:
+USAGE: This Module- Executes a command on a remote node
+OPTIONS: creates,removes, chdir..etc
+EXAMPLE: -
+- name: Run the command if the specified file does not exist.
+command: /usr/bin/make_database.sh arg1 arg2 creates=/path/to/database
+-----------------------------------------------------------------------------
+#SCRIPT:
+USAGE: This Module- Runs a local script on a remote node after transferring it
+OPTIONS: creates,removes,..etc
+EXAMPLE: - script: /some/local/script.sh --some-arguments 1234
+-----------------------------------------------------------------------------
+#SHELL:
+USAGE: shell - Execute commands in nodes.
+OPTIONS: creates,removes, chdir,executable..etc
+EXAMPLE:
+- name: Execute the command in remote shell; stdout goes to the specified file on the remote.
+shell: somescript.sh >> somelog.txt
+-----------------------------------------------------------------------------
+FILE MODULES
+#COPY:
+USAGE: copy - Copies files to remote locations.
+OPTIONS: attributes,dest,force,group,mode,src, ownermode...etc
+EXAMPLE:
+# Example from Ansible Playbooks
+- copy:
+src: /srv/myfiles/foo.conf
+dest: /etc/foo.conf
+owner: foo
+group: foo
+mode: 0644
+------------------------------------------------------------------------------------
+#lineinfile:
+USAGE: lineinfile - Ensure a particular line is in a file, or replace an existing line using a back-referenced regular expression.
+OPTIONS: state,path,mode,owner....etc
+EXAMPLE: 
+- name: we are giving mysql listen on all ports
+lineinfile: 
+dest: /etc/mysql/my.cnf 
+regexp: ^bind-address
+line: "bind-address = 0.0.0.0."
+notify: restart mysql
+-----------------------------------------------------------------------------
+#ARCHIVE:
+USAGE: archive - Creates a compressed archive of one or more files or trees.
+OPTIONS: attributes,dest,format,mode, group,owner,path,remove...etc
+EXAMPLE:
+# Compress directory /path/to/foo/ into /path/to/foo.tgz
+- archive:
+path: /path/to/foo
+dest: /path/to/foo.tgz
+# Compress regular file /path/to/foo into /path/to/foo.gz and remove it
+- archive:
+path: /path/to/foo
+remove: True
+# Create a zip archive of /path/to/foo
+- archive:
+path: /path/to/foo
+format: zip
+# Create a bz2 archive of multiple files, rooted at /path
+- archive:
+path:
+- /path/to/foo
+- /path/wong/foo
+dest: /path/file.tar.bz2
+format: bz2
+-----------------------------------------------------------------------------
+#FILE:
+USAGE : file - Sets attributes of files
+OPTIONS:state,src,path,owner,mode,group,force,attribute..etc
+EXAMPLE:
+# create a directory if it doesn't exist
+- file:
+path: /etc/some_directory
+state: directory
+mode: 0755
+-----------------------------------------------------------------------------
+#UNARCHIVE:
+USAGE: unarchive - Unpacks an archive after (optionally) copying it from the local machine.
+OPTIONS: copy, creates,mode,src,owner,dest,..etc
+EXAMPLE:
+# Example from Ansible Playbooks
+- unarchive:
+src: foo.tgz
+dest: /var/lib/foo
+-----------------------------------------------------------------------------
+#TEMPLATE:
+USAGE: template - Templates a file out to a remote server.
+OPTIONS: src,owner,mode,group,force,backup, attributes,...etc
+EXAMPLE:
+# Example from Ansible Playbooks
+- template:
+src: /mytemplates/foo.j2
+dest: /etc/file.conf
+owner: bin
+group: wheel
+mode: 0644
+-----------------------------------------------------------------------------
+NET TOOLS MODULES
+#GET_URL:
+USAGE: get_url - Downloads files from HTTP, HTTPS, or FTP to node
+OPTIONS: dest,force,group, mode,others,owner,url,...etc
+EXAMPLE:
+- name: download foo.conf
+get_url:
+url: https://URL Name
+dest: /etc/
+mode: 0440
+-----------------------------------------------------------------------------
+PACKAGING MODULES
+(FOR LANGUAGE)
+#PIP:
+USAGE: pip - Manages Python library dependencies.
+OPTIONS: chdir,name,state,version,..etc
+EXAMPLE: 
+-name: pip installing fabric
+pip: name=fabric state=present update_cache=yes
+-----------------------------------------------------------------------------
+(OS)
+#APT:
+USAGE: apt - Manages apt-packages
+OPTIONS: update_cache.upgrade,state,purge,name,install_recommends ,force...etc
+EXAMPLE:
+- name: Update repositories cache and install "foo" package
+apt:
+name: foo
+update_cache: yes
+-----------------------------------------------------------------------------
+#APT_KEY:
+USAGE: apt_key - Add or remove an apt key
+OPTIONS:data,url,file,id,state,
+EXAMPLE:
+- apt_key:
+url: "https://ftp-master.debian.org/keys/archive-key-6.0.asc"
+state: present
+-----------------------------------------------------------------------------
+#APT_REPOSITORY:
+USAGE: apt_repository - Add and remove APT repositories
+OPTIONS: filename,repo,state,update_cache,mode...etc
+EXAMPLE:
+# Add specified repository into sources list.
+- apt_repository:
+repo: deb http://archive.canonical.com/ubuntu hardy partner
+state: present
+-----------------------------------------------------------------------------
+#PACKAGE:
+USAGE: package - Generic OS package manager
+OPTIONS:name,state,use...etc
+EXAMPLE:
+- name: install the latest version of ntpdate
+package:
+name: ntpdate
+state: latest
+-----------------------------------------------------------------------------
+#YUM:
+USAGE: yum - Manages packages with the yum package manager
+OPTIONS:list,name,state,update_cache
+EXAMPLE:
+- name: install the latest version of Apache
+yum:
+name: httpd
+state: latest
+- name: remove the Apache package
+yum:
+name: httpd
+state: absent
+- name: install the latest version of Apache from the testing repo
+yum:
+name: httpd
+enablerepo: testing
+state: present
+---------------------------------------------------------------------------
+#YUM_REPOSITORY:
+USAGE: yum_repository - Add or remove YUM repositories
+OPTIONS: state,name,mode,file,enabled,
+EXAMPLE:
+- name: Add repository
+yum_repository:
+name: epel
+description: EPEL YUM repo
+baseurl: https://download.fedoraproject.org/…/epel/$relea…/$basearch/
+---------------------------------------------------------------------DATABASE MODULES
+#MYSQL_DB:
+USAGE: mysql_db - Add or remove MySQL databases from a remote host.
+OPTIONS: state, target ,login_host,login_password,login_user,login_port
+EXAMPLE: 
+- name: create visualapp database
+mysql_db:
+name: visualapp
+state: present
+#MYSQL_USER:
+USAGE: mysql_user - Adds or removes a user from a MySQL database.
+EXAMPLE:
+- name: create visualapp user
+mysql_user: 
+name: visualapp
+password: visualapp 
+priv: visualapp.*:ALL
+host: '%'
+state: present
+SYSTEM MODULES
+#AUTHORISED_KEY:
+USAGE: authorized_key - Adds or removes an SSH authorized key
+OPTIONS: key,key_options,path,state,user,
+EXAMPLE:
+- name: Set authorized key in alternate location
+authorized_key:
+user: charlie
+state: present
+key: "{{ lookup('file', '/home/charlie/.ssh/id_rsa.pub') }}"
+path: /etc/ssh/authorized_keys/charlie
+manage_dir: False
+------------------------------------------------------------------------
+#HOSTNAME:
+USAGE: hostname - Manage hostname
+OPTIONS: name
+EXAMPLE:
+- hostname:
+name: web01
+---------------------------------------------------------------------------
+#UFW:
+USAGE: ufw - Manage firewall with UFW in debian systems 
+OPTIONS:delate,log,name,state,
+EXAMPLE:
+-name: ufw managong
+State: enable
+-----------------------------------------------------------------------------
+#USER:
+USAGE: user - Manage user accounts
+OPTIONS:generate_ssh_key,home,name,password,remove,ssh_key_file,state,
+EXAMPLE:
+# Add the user 'johnd' with a specific uid and a primary group of 'admin'
+- user:
+name: johnd
+comment: "John Doe"
+uid: 1040
+group: admin
+-----------------------------------------------------------------------------
+#SYSCTL:
+USAGE: sysctl - Manage entries in sysctl.conf.
+OPTIONS:name,reload,state,systemctl_file...etc
+EXAMPLE:
+# Set vm.swappiness to 5 in /etc/sysctl.conf
+- sysctl:
+name: vm.swappiness
+value: 5
+state: present
+# Remove kernel.panic entry from /etc/sysctl.conf
+- sysctl:
+name: kernel.panic
+state: absent
+sysctl_file: /etc/sysctl.conf
+------------------------------------------------------------------------
+#SERVICE:
+OPTIONS: service - Manage services.
+USAGE: enabled,name,state,use.etc
+EXAMPLE:
+- service:
+name: httpd
+state: started
+# Example action to stop service httpd, if running
+- service:
+name: httpd
+state: stopped
+-----------------------------------------------------------------------
+#PING: ping - Try to connect to host, verify a usable python and return pong on success.
+USAGE: ping - Try to connect to host, verify a usable python and return pong on success.
+EXAMPLE:
+# Test we can logon to 'webservers' and execute python with json lib.
+ansible webservers -m ping
+---------------------------------------------------------------------------
+#OHAI: ohai - Returns inventory data from Ohai
+USAGE: ohai - Returns inventory data from Ohai
+EXAMPLE:
+# Retrieve (ohai) data from all Web servers and store in one-file per host
+ansible webservers -m ohai --tree=/tmp/ohaidata
+---------------------------------------------------------------------------
+#KNOWN_HOSTS:
+USAGE: known_hosts - Add or remove a host from the known_hosts file
+OPTIONS: key,name,path,state
+EXAMPLE:
+known_hosts:
+path: /etc/ssh/ssh_known_hosts
+name: foo.com.invalid
+key: "{{ lookup('file', 'pubkeys/foo.com.invalid') }}"
+----------------------------------------------------------------------------
+#IPTABLES: iptables - Modify the systems iptables
+OPTIONS: destination,state,source,
+USAGE: to stop the firewals
+EXAMPLE: 
+- name: STOPPING IPTABLES
+service:
+name: iptables
+state: stopped
+UTILITIES MODULES(LOGIC)
+---------------------------------------------------------------------------
+#WAIT_FOR:
+USAGE: wait_for - Waits for a condition before continuing.
+OPTIONS: port,host,path,state,
+EXAMPLE:
+- name : waiting forport 
+wait_for:
+port: 8080
+WEB INFRASTUCTURE MODULES
+------------------------------------------------------------------------------------------
+#APACHE2_MODULE:
+USAGE: apache2_module - enables/disables a module of the Apache2 webserver
+OPTIONS: force,name,state,
+EXAMPLE:
+# enables the Apache2 module "wsgi"
+- apache2_module:
+state: present
+name: wsgi
+# disables the Apache2 module "wsgi"
+- apache2_module:
+state: absent
+name: wsgi
+**********************************************************************
+apt:
+pip:
+yum: 
+State=choices
+Choices=present ,absent,latest,touch,link,file,
+Service 
+state =choices
+Choices=started,stopped,restarted,reload
+Mode: permissions,
