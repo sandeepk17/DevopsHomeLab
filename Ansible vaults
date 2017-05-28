@@ -1,0 +1,56 @@
+[Ansible Vault]
+Managing secrets with Ansible vault.
+We can store our passwords/secrets encrypted in the ansible vault. We will create vault in group_vars/all directory.
+# mkdir -p group_vars/all
+# cd group_vars/all
+# export EDITOR=vim
+# ansible-vault create vault
+Give a vault password and put varibales that you want to encrypt, below mentioned is the example of storing tomcat password.
+---
+vault_tomcat_pass : <Enter password for tomcat here>
+Refer to vault_tomcat_pass in group_vars/all/vars file
+# cd group_vars/all/
+# vi vars
+---
+tomcatuser: tomcat
+tomcatpass: “{{vault_tomcat_pass}}”
+If you execute your playbook now where you are using tomcatpass, you should get some error like below. For example I am using {{tomcatpass}} variable in my tomcat.yml playbook.
+# ansible-playbook tomcat.yml
+ERROR! Decryption failed 
+ERROR! A vault password must be specified
+You can give --ask-vault-pass option while executing playbook which will ask you the vault password.
+# ansible-playbook tomcat.yml --ask-vault-pass
+You can also use a file where you specify vault password.
+Lets say “vaultpass” is our vault password.
+# echo "vaultpass" > ~/.vault_pass.txt
+# chmod 0600 ~/.vault_pass.txt
+Sample Execution.
+Sandy@DevOps:.../ans$ tree
+.
+├── group_vars
+│ └── all
+│ ├── vars
+│ └── vault
+└── test.yml
+2 directories, 3 files
+Sandy@DevOps:.../ans$ cat group_vars/all/vars 
+---
+tomcatpassword: "{{tomcatpass}}"
+Sandy@DevOps:.../ans$ cat test.yml 
+---
+- hosts: localhost
+tasks:
+- name: Print tomcat pass
+debug: msg="{{tomcatpassword}}"
+Sandy@DevOps:.../ans$ ansible-playbook test.yml --ask-vault-pass
+Vault password: 
+[WARNING]: provided hosts list is empty, only localhost is available
+PLAY ***************************************************************************
+TASK [setup] *******************************************************************
+ok: [localhost]
+TASK [Print tomcat pass] *******************************************************
+ok: [localhost] => {
+"msg": "tomcat"
+}
+PLAY RECAP *********************************************************************
+localhost : ok=2 changed=0 unreachable=0 failed=0
