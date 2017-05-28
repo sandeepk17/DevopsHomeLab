@@ -1,0 +1,121 @@
+[ TOMCAT INSTALLATION USING ANSIBLE-PLAYBOOK ]
+1. Create 2 Security Groups
+--> 1. ansible-sg ==> inboud ==> ssh , port 80, myip
+--> 2. tomcat-sg ==> inbound ==> ssh, port80, myip 
+&
+add ansible-sg to tomcat-sg
+==> all trafic --> select ansible-sg
+2. Create a 2 Instances
+--> 1. for ansible ==> select ubuntu 16.04 , and install ansible 
+--> 2. for tomcat ==> selcet centos6 & after Launching the instace , log into the terminal of Centos and do as the below
+==> create a user using “ useradd <username> ”
+==> set a password to the user using “ passwd <username> ” 
+==> add user to the visudo
+==> go to /etc/ssh/sshd_config change PasswordAthontication yes
+==> Restart the sshd service “ service sshd restart ”
+3. Now Log into the terminal of ansible using ssh & .pem files and do as follows
+==> login to root user and make a directory path
+mkdir -p ansible-roles/tomcat
+==> go the the tomcat directory
+cd ansible-roles/tomcat
+In the directory create 4 files
+1. ansible.cfg 2. int-dev 3. tomcat-users.xml 4. context.xml
+1. Open the file ansible.cfg
+vi ansible.cfg
+[defaults]
+host_key_checking = False
+inventory = int-dev
+SAVE & QUIT ==> :wq
+2. Open the file int-dev
+vi int-dev
+tomcat01 ansible_ssh_host=<aws Public Ip of Tomcat Instance> ansible_ssh_user=<username> ansible_ssh_pass=<password of user>
+[tomcatservers]
+tomcat01
+SAVE & QUIT ==> :wq
+3. vi tomcat-users.xml
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users xmlns="http://tomcat.apache.org/xml"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://tomcat.apache.org/xml tomcat-users.xsd"
+version="1.0">
+<role rolename="manager-script"/>
+<role rolename="manager-gui"/>
+<user username="tomcat" password="tomcat" roles="manager-script,manager-gui"/>
+</tomcat-users>
+SAVE & QUIT ==> :wq
+4. vi context.xml
+<Context antiResourceLocking="false" privileged="true" >
+<!--
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+-->
+</Context>
+SAVE & QUIT ==> :wq
+Now all the 4 files have been created
+Now test the connection of tomcat using ansible
+==> ansible -m ping all
+Now create a another file ==> tomcat8.yml & do as the following
+vi tomcat8.yml
+---
+- hosts: tomcatservers
+become: yes
+remote_user: sudo
+vars:
+destination: /home/tomcat/apache-tomcat-8.5.15
+tasks:
+- name: CREATING A DIRECTORY
+file:
+path: /home/tomcat
+state: directory
+- name: INSTALLING JAVA
+yum: 
+name: java
+state: installed
+- name: DOWNLOADING TOMCAT ZIP FILE
+get_url:
+url: http://mirror.fibergrid.in/…/bin/apache-tomcat-8.5.15.zip
+dest: /home/tomcat
+- name: INSTALLING UNZIP
+yum: 
+name: unzip
+state: installed
+- name: UNZIP TOMCAT
+unarchive:
+src: {{ destination }}.tar.gz
+dest: /home/tomcat
+remote_src: true
+- name: CHANGING PERMISSIONS OF SHUTDOWN
+file: 
+path: {{ destination }}/bin/shutdown.sh
+mode: "u+x"
+- name: CHANGING PERMISSIONS OF STARTUP
+file: 
+path: {{ destination }}/bin/startup.sh
+mode: "u+x"
+- name: CHANGING PERMISSIONS OF CATALINA
+file: 
+path: {{ destination }}/bin/catalina.sh
+mode: "u+x"
+- name: UPDATING TOMCAT USER.XML FILE
+copy:
+src: tomcat-users.xml
+dest: {{ destination }}/conf/tomcat-users.xml
+- name: UPDATING CONTEXT.XML FILE
+copy:
+src: context.xml
+dest: {{ destination }}/webapps/manager/META-INF/
+- name: RESTARTING TOMCAT
+shell: nohup bash /opt/tomcat/tomcdir/apache-tomcat-8.5.15/bin/shutdown.sh
+shell: nohup bash /opt/tomcat/tomcdir/apache-tomcat-8.5.15/bin/startup.sh &
+- name: STOPPING IPTABLES
+service:
+name: iptables
+state: stopped
+- name: WAITING
+wait_for:
+port: 8080
+then SAVE & QUIT ==> :wq
+Now Run the playbook using the following command
+ansible-playbook tomcat8.yml
+check the web using the public ip of tomcat
+<publicip of tomcat Instance>:8080 then click on managerapp & login with username & passwd
