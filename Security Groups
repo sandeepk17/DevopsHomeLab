@@ -1,0 +1,23 @@
+Continuous Delivery Project :: assign SecurityGroup
+
+1) Jenkins is not taking any information from nexus nor tomcat
+so the Security Group of Jenkins Should Be ::
+ssh ==> port:22 ==> Myip
+Custom TCP ==> port:8080 ==> Myip
+
+
+2) Tomcat is taking input from ansible [here ansible is installed
+in Jenkins] so the Security Group for Tomcat Should Be::
+ssh ==> port:22 ==> Myip
+Custom TCP ==> Port :: 8080 ==> Myip
+Custom TCP ==> Port :: 22 ==> Jenkins Security Group
+
+
+
+3) Nexus :: Jenkins is uploading artifacts to nexus & 
+Tomcat is downloading artifacts from nexus
+So the Security Group of Nexus Should Be ::
+ssh ==> port :: 22 ==> Myip
+Custom TCP ==> Port :: 8081 ==> Myip
+Custom TCP ==> Port :: 8081 ==> Jenkins Security Group
+Custom TCP ==> Port :: 8081 ==> Tomcat Security Group
